@@ -14,13 +14,15 @@ function App() {
       <div className="min-h-screen bg-background md:flex">
         <Sidebar />
 
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
-          <Route path="/job-matcher" element={<JobMatcher />} />
-          <Route path="/saved-jobs" element={<SavedJobs />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
+        <main className="min-w-0 flex-1 pt-16 md:pt-0">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
+            <Route path="/job-matcher" element={<JobMatcher />} />
+            <Route path="/saved-jobs" element={<SavedJobs />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
       </div>
     </BrowserRouter>
   );
