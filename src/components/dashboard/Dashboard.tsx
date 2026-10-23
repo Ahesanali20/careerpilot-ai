@@ -2,6 +2,8 @@ import { dashboardStats } from "../../data/dashboardStats";
 import StatCard from "./StatCard";
 import DashboardHeader from "../layout/DashboardHeader";
 import QuickActions from "./QuickActions";
+import JobMatchCard from "./JobMatchCard";
+import { recentJobs } from "../../data/recentJobs";
 
 function Dashboard() {
   return (
@@ -35,6 +37,23 @@ function Dashboard() {
 
         {/* Quick Actions */}
         <QuickActions />
+
+        <section className="mt-8">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-text-primary">
+              Recent Job Matches
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Opportunities matched to your skills.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            {recentJobs.map((job) => (
+              <JobMatchCard key={job.id} job={job} />
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );
