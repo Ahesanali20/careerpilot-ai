@@ -9,11 +9,102 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { extractPdfText } from "../utils/extractPdfText";
+import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+const analysisMarkdownComponents: Components = {
+  h1: ({ children }) => (
+    <h1 className="mb-4 mt-7 text-2xl font-bold tracking-tight text-text-primary first:mt-0">
+      {children}
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-3 mt-7 border-b border-border pb-2 text-xl font-semibold tracking-tight text-text-primary first:mt-0">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-2 mt-5 text-lg font-semibold text-text-primary">
+      {children}
+    </h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="mb-2 mt-4 text-base font-semibold text-text-primary">
+      {children}
+    </h4>
+  ),
+  p: ({ children }) => (
+    <p className="my-3 leading-7 text-text-primary">{children}</p>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-4 list-inside list-decimal space-y-2 marker:font-semibold marker:text-primary">
+      {children}
+    </ol>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-4 list-inside list-disc space-y-2 marker:text-primary">
+      {children}
+    </ul>
+  ),
+  li: ({ children }) => (
+    <li className="leading-7 text-text-primary">{children}</li>
+  ),
+  strong: ({ children }) => (
+    <strong className="font-semibold text-text-primary">{children}</strong>
+  ),
+  a: ({ children, href }) => (
+    <a
+      href={href}
+      className="font-medium text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+    >
+      {children}
+    </a>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="my-4 border-l-4 border-primary/30 pl-4 text-text-secondary [&>p]:my-2">
+      {children}
+    </blockquote>
+  ),
+  table: ({ children }) => (
+    <div
+      role="region"
+      aria-label="Scrollable analysis table"
+      tabIndex={0}
+      className="my-5 w-full max-w-full overflow-x-auto rounded-xl border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <table className="w-full min-w-[640px] table-auto border-collapse text-left text-sm">
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="bg-background text-text-primary">{children}</thead>
+  ),
+  tbody: ({ children }) => (
+    <tbody className="divide-y divide-border">{children}</tbody>
+  ),
+  tr: ({ children }) => (
+    <tr className="border-b border-border last:border-b-0">{children}</tr>
+  ),
+  th: ({ children }) => (
+    <th className="border-b border-border px-4 py-3 text-left align-top font-semibold leading-5 break-words whitespace-normal">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="px-4 py-3 align-top leading-6 break-words whitespace-normal text-text-primary">
+      {children}
+    </td>
+  ),
+  hr: () => <hr className="my-6 border-border" />,
+};
 
 function ResumeAnalyzer() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [extractedText, setExtractedText] = useState("");
+  const [analysis, setAnalysis] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,22 +118,21 @@ function ResumeAnalyzer() {
   };
 
   const handleSelectedFile = (file: File) => {
+    setSelectedFile(null);
+    setExtractedText("");
+    setAnalysis("");
+    setError(null);
+
     if (file.type !== "application/pdf") {
-      setSelectedFile(null);
-      setExtractedText("");
       setError("Please select a PDF file.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setSelectedFile(null);
-      setExtractedText("");
       setError("File size must be 5 MB or less.");
       return;
     }
 
-    setError(null);
-    setExtractedText("");
     setSelectedFile(file);
   };
 
@@ -178,6 +268,7 @@ function ResumeAnalyzer() {
               setSelectedFile(null);
               setError(null);
               setExtractedText("");
+              setAnalysis("");
 
               if (fileInputRef.current) {
                 fileInputRef.current.value = "";
@@ -202,6 +293,8 @@ function ResumeAnalyzer() {
 
             setIsAnalyzing(true);
             setError(null);
+            setExtractedText("");
+            setAnalysis("");
 
             try {
               const text = await extractPdfText(selectedFile);
@@ -215,9 +308,35 @@ function ResumeAnalyzer() {
               }
 
               setExtractedText(text);
+              const response = await fetch("/api/analyze-resume", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  resumeText: text,
+                }),
+              });
+
+              const data: {
+                success?: boolean;
+                analysis?: string;
+                error?: string;
+              } = await response.json();
+
+              if (!response.ok) {
+                throw new Error(data.error || "Resume analysis failed.");
+              }
+
+              setAnalysis(data.analysis ?? "");
             } catch (error) {
-              console.error("PDF text extraction failed:", error);
-              setError("Unable to read this PDF. Please try another PDF file.");
+              console.error("Resume analysis failed:", error);
+
+              setError(
+                error instanceof Error
+                  ? error.message
+                  : "Resume analysis failed. Please try again.",
+              );
             } finally {
               setIsAnalyzing(false);
             }
@@ -227,7 +346,7 @@ function ResumeAnalyzer() {
           {isAnalyzing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Extracting Text...</span>
+              <span>Analyzing Resume...</span>
             </>
           ) : (
             "Analyze Resume"
@@ -237,7 +356,7 @@ function ResumeAnalyzer() {
 
       {/* Extracted Text Section */}
       {extractedText && (
-        <section className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <section className="mt-8 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6">
           <div className="border-b border-border pb-4">
             <h2 className="text-lg font-semibold text-text-primary">
               Extracted Resume Text
@@ -250,9 +369,33 @@ function ResumeAnalyzer() {
           <textarea
             value={extractedText}
             readOnly
-            rows={12}
-            className="mt-4 w-full resize-y rounded-xl border border-border bg-background p-4 text-sm leading-relaxed text-text-primary outline-none focus:ring-1 focus:ring-primary"
-          />
+            rows={18}
+            wrap="soft"
+            aria-label="Extracted resume text"
+            className="mt-4 block max-h-[70vh] min-h-[20rem] w-full max-w-full resize-y overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-border bg-background p-4 font-sans text-sm leading-7 tracking-[0.01em] text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5"
+            />
+        </section>
+      )}
+
+      {analysis && (
+        <section className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+          <div className="border-b border-border pb-4">
+            <h2 className="text-lg font-semibold text-text-primary">
+              AI Resume Analysis
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              Personalized feedback to help improve your resume.
+            </p>
+          </div>
+
+          <div className="mt-4 min-w-0 text-sm">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={analysisMarkdownComponents}
+            >
+              {analysis}
+            </ReactMarkdown>
+          </div>
         </section>
       )}
     </main>
