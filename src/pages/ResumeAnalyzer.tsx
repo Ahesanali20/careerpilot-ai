@@ -8,7 +8,7 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
-import { extractPdfText } from "../utils/extractPdfText";
+import { fetchJson } from "../utils/api";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -297,6 +297,7 @@ function ResumeAnalyzer() {
             setAnalysis("");
 
             try {
+              const { extractPdfText } = await import("../utils/extractPdfText");
               const text = await extractPdfText(selectedFile);
 
               if (!text.trim()) {
@@ -307,8 +308,18 @@ function ResumeAnalyzer() {
                 return;
               }
 
+              if (text.trim().length < 50) {
+                setExtractedText(text);
+                setError("The extracted resume text must contain at least 50 characters.");
+                return;
+              }
+
               setExtractedText(text);
-              const response = await fetch("/api/analyze-resume", {
+              const { response, data } = await fetchJson<{
+                success?: boolean;
+                analysis?: string;
+                error?: string;
+              }>("/api/analyze-resume", {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
@@ -317,12 +328,6 @@ function ResumeAnalyzer() {
                   resumeText: text,
                 }),
               });
-
-              const data: {
-                success?: boolean;
-                analysis?: string;
-                error?: string;
-              } = await response.json();
 
               if (!response.ok) {
                 throw new Error(data.error || "Resume analysis failed.");

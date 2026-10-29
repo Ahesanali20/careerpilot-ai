@@ -1,75 +1,196 @@
 import { useState } from "react";
+import { fetchJson } from "../utils/api";
+import type { Job } from "../types/job";
+import { isJobSaved, toggleSavedJob } from "../utils/savedJobs";
+import { loadSettings } from "../utils/settings";
 import {
   CheckCircle2,
   AlertCircle,
   Target,
   Sparkles,
   LoaderCircle,
+  Bookmark,
+  BookmarkCheck,
+  TrendingUp,
+  Lightbulb,
+  XCircle,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+
+type MatchCategory =
+  | "Strong Match"
+  | "Moderate Match"
+  | "Partial Match"
+  | "Low Match";
+
+type JobMatchResult = {
+  matchScore: number;
+  matchCategory: MatchCategory;
+  scoreExplanation: string;
+  matchingSkills: string[];
+  missingSkills: string[];
+  strengths: string[];
+  suggestions: string[];
+};
+
+function isJobMatchResult(value: unknown): value is JobMatchResult {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const result = value as Record<string, unknown>;
+
+  return (
+    typeof result.matchScore === "number" &&
+    Number.isInteger(result.matchScore) &&
+    result.matchScore >= 0 &&
+    result.matchScore <= 100 &&
+    ["Strong Match", "Moderate Match", "Partial Match", "Low Match"].includes(
+      result.matchCategory as string,
+    ) &&
+    typeof result.scoreExplanation === "string" &&
+    Array.isArray(result.matchingSkills) &&
+    result.matchingSkills.every((item) => typeof item === "string") &&
+    Array.isArray(result.missingSkills) &&
+    result.missingSkills.every((item) => typeof item === "string") &&
+    Array.isArray(result.strengths) &&
+    result.strengths.every((item) => typeof item === "string") &&
+    Array.isArray(result.suggestions) &&
+    result.suggestions.every((item) => typeof item === "string")
+  );
+}
+
+function getScoreColor(score: number) {
+  if (score >= 80) return "text-emerald-600";
+  if (score >= 60) return "text-primary";
+  if (score >= 40) return "text-amber-600";
+  return "text-red-600";
+}
+
+function getScoreBarColor(score: number) {
+  if (score >= 80) return "bg-emerald-500";
+  if (score >= 60) return "bg-primary";
+  if (score >= 40) return "bg-amber-500";
+  return "bg-red-500";
+}
+
+function getCategoryStyle(category: MatchCategory) {
+  switch (category) {
+    case "Strong Match":
+      return "bg-emerald-500/10 text-emerald-700";
+    case "Moderate Match":
+      return "bg-primary/10 text-primary";
+    case "Partial Match":
+      return "bg-amber-500/10 text-amber-700";
+    case "Low Match":
+      return "bg-red-500/10 text-red-700";
+  }
+}
+
+function getJobId(title: string, company: string, description: string) {
+  const source = `${title}|${company}|${description}`;
+  return Array.from(source).reduce((hash, character) => ((hash << 5) - hash + character.charCodeAt(0)) | 0, 0) >>> 0;
+}
+
+function createSavedJob(
+  id: number,
+  result: JobMatchResult,
+  title: string,
+  company: string,
+): Job {
+  return {
+    id,
+    title: title.trim() || "Matched opportunity",
+    company: company.trim() || "Company not specified",
+    location: "Not specified",
+    matchScore: result.matchScore,
+    skills: result.matchingSkills.slice(0, 6),
+    salary: "Not specified",
+    postedAt: "Just now",
+  };
+}
+
+function SaveMatchButton({ job }: { job: Job }) {
+  const [saved, setSaved] = useState(() => isJobSaved(job.id));
+
+  return (
+    <button
+      type="button"
+      onClick={() => setSaved(toggleSavedJob(job))}
+      aria-pressed={saved}
+      className="inline-flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10"
+    >
+      {saved ? <BookmarkCheck size={17} aria-hidden="true" /> : <Bookmark size={17} aria-hidden="true" />}
+      {saved ? "Saved" : "Save job"}
+    </button>
+  );
+}
+
+type ResultListProps = {
+  title: string;
+  items: string[];
+  emptyMessage: string;
+  icon: typeof CheckCircle2;
+  iconClassName: string;
+  iconBackground: string;
+};
+
+function ResultList({
+  title,
+  items,
+  emptyMessage,
+  icon: Icon,
+  iconClassName,
+  iconBackground,
+}: ResultListProps) {
+  return (
+    <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <div className={`rounded-xl p-2.5 ${iconBackground} ${iconClassName}`}>
+          <Icon size={22} />
+        </div>
+
+        <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+      </div>
+
+      {items.length > 0 ? (
+        <ul className="space-y-3">
+          {items.map((item, index) => (
+            <li
+              key={`${item}-${index}`}
+              className="flex items-start gap-2.5 text-sm leading-6 text-text-primary"
+            >
+              <CheckCircle2
+                size={17}
+                className={`mt-1 shrink-0 ${iconClassName}`}
+              />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm leading-6 text-text-secondary">{emptyMessage}</p>
+      )}
+    </section>
+  );
+}
 
 function JobMatcher() {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [analysis, setAnalysis] = useState("");
+  const [result, setResult] = useState<JobMatchResult | null>(null);
+  const [matchedJobId, setMatchedJobId] = useState<number | null>(null);
 
   const isReadyToCompare =
     resumeText.trim().length >= 50 && jobDescription.trim().length >= 50;
 
-  // Extract the match score from the AI response.
-  const matchScoreMatch = analysis.match(
-    /Match Score\s*(?:\([^)]*\))?\s*:\s*(\d{1,3})/i,
-  );
-
-  const parsedScore = matchScoreMatch ? Number(matchScoreMatch[1]) : null;
-
-  const matchScore =
-    parsedScore !== null && parsedScore >= 0 && parsedScore <= 100
-      ? parsedScore
-      : null;
-
-  const matchCategory =
-    matchScore === null
-      ? null
-      : matchScore >= 80
-        ? "Strong Match"
-        : matchScore >= 60
-          ? "Moderate Match"
-          : matchScore >= 40
-            ? "Partial Match"
-            : "Low Match";
-
-  // Extract individual sections from the AI-generated report.
-  const extractSection = (heading: string) => {
-    const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-    const nextSection =
-      "(?=\\n\\s*(?:#{1,6}\\s*)?(?:\\*\\*)?\\d+\\.|\\n\\s*---\\s*$|$)";
-
-    const regex = new RegExp(
-      `(?:#{1,6}\\s*)?(?:\\*\\*)?\\d*\\.?\\s*${escapedHeading}(?:\\*\\*)?\\s*:?\\s*\\n?([\\s\\S]*?)${nextSection}`,
-      "i",
-    );
-
-    const match = analysis.match(regex);
-
-    if (!match?.[1]) {
-      return "";
-    }
-
-    return match[1].replace(/^\s*[:\-*]+\s*/, "").trim();
-  };
-
-  const matchingSkills = extractSection("Matching Skills");
-
-  const missingSkills = extractSection("Missing or Weak Skills");
-
   const handleCompare = async () => {
     setError("");
-    setAnalysis("");
+    setResult(null);
+    setMatchedJobId(null);
 
     if (resumeText.trim().length < 50) {
       setError("Resume must contain at least 50 characters.");
@@ -84,28 +205,38 @@ function JobMatcher() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/match-job", {
+      const { response, data } = await fetchJson<{
+        result?: unknown;
+        error?: string;
+      }>("/api/match-job", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          resumeText,
-          jobDescription,
+          resumeText: resumeText.trim(),
+          jobDescription: jobDescription.trim(),
         }),
       });
-
-      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Job matching failed. Please try again.");
       }
 
-      if (typeof data.analysis !== "string" || !data.analysis.trim()) {
-        throw new Error("AI returned an empty analysis.");
+      if (!isJobMatchResult(data.result)) {
+        throw new Error(
+          "The server returned an invalid result. Please try again.",
+        );
       }
 
-      setAnalysis(data.analysis);
+      const jobId = getJobId(jobTitle.trim(), companyName.trim(), jobDescription.trim());
+      setMatchedJobId(jobId);
+      setResult(data.result);
+
+      if (loadSettings().saveMatchesAutomatically && data.result.matchScore >= 80) {
+        const job = createSavedJob(jobId, data.result, jobTitle, companyName);
+        if (!isJobSaved(job.id)) toggleSavedJob(job);
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -137,6 +268,15 @@ function JobMatcher() {
       </div>
 
       {/* Input cards */}
+      <div className="mb-6 grid gap-5 sm:grid-cols-2">
+        <label className="text-sm font-medium text-text-primary">Job title (optional)
+          <input value={jobTitle} onChange={(event) => setJobTitle(event.target.value)} placeholder="e.g. Frontend Developer" className="mt-2 w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </label>
+        <label className="text-sm font-medium text-text-primary">Company name (optional)
+          <input value={companyName} onChange={(event) => setCompanyName(event.target.value)} placeholder="e.g. TechNova" className="mt-2 w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" />
+        </label>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -248,10 +388,11 @@ function JobMatcher() {
       {/* Error message */}
       {error && (
         <div
-          className="mt-5 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-600"
+          className="mt-5 flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-600"
           role="alert"
         >
-          {error}
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <p>{error}</p>
         </div>
       )}
 
@@ -278,10 +419,15 @@ function JobMatcher() {
       )}
 
       {/* Analysis results */}
-      {analysis && !isLoading && (
+      {result && !isLoading && (
         <section className="mt-8">
           <div className="mb-6">
-            <p className="text-sm font-medium text-primary">YOUR RESULTS</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-medium text-primary">YOUR RESULTS</p>
+              {matchedJobId !== null && (
+                <SaveMatchButton job={createSavedJob(matchedJobId, result, jobTitle, companyName)} />
+              )}
+            </div>
 
             <h2 className="mt-1 text-xl font-bold text-text-primary md:text-2xl">
               Job Match Analysis
@@ -292,109 +438,133 @@ function JobMatcher() {
             </p>
           </div>
 
-          {/* Match score */}
-          {matchScore !== null && (
-            <div className="mb-6 rounded-2xl border border-border bg-surface p-6">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-text-secondary">
-                    Resume Match Score
-                  </p>
+          {/* Match score card */}
+          <section className="mb-6 rounded-2xl border border-border bg-surface p-5 md:p-7">
+            <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-center">
+              <div className="flex flex-col items-center justify-center rounded-2xl bg-background p-6 md:min-w-44">
+                <p className="text-sm font-medium text-text-secondary">
+                  Match Score
+                </p>
 
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-5xl font-bold tracking-tight text-primary">
-                      {matchScore}
-                    </span>
-                    <span className="text-lg text-text-secondary">/100</span>
-                  </div>
+                <p
+                  className={`mt-2 text-5xl font-bold tracking-tight ${getScoreColor(result.matchScore)}`}
+                >
+                  {result.matchScore}%
+                </p>
 
-                  {matchCategory && (
-                    <p className="mt-2 text-sm font-semibold text-text-primary">
-                      {matchCategory}
-                    </p>
-                  )}
+                <span
+                  className={`mt-3 rounded-full px-3 py-1 text-xs font-semibold ${getCategoryStyle(result.matchCategory)}`}
+                >
+                  {result.matchCategory}
+                </span>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <TrendingUp size={20} className="text-primary" />
+
+                  <h3 className="font-semibold text-text-primary">
+                    Your compatibility overview
+                  </h3>
                 </div>
 
-                <div className="w-full sm:max-w-md">
-                  <div className="mb-2 flex justify-between text-xs text-text-secondary">
-                    <span>Match progress</span>
-                    <span>{matchScore}%</span>
-                  </div>
+                <p className="text-sm leading-7 text-text-secondary">
+                  {result.scoreExplanation}
+                </p>
 
+                <div
+                  className="mt-5 h-3 overflow-hidden rounded-full bg-background"
+                  role="progressbar"
+                  aria-label="Resume and job match score"
+                  aria-valuenow={result.matchScore}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
                   <div
-                    className="h-3 overflow-hidden rounded-full bg-border"
-                    role="progressbar"
-                    aria-label="Resume match score"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={matchScore}
-                  >
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-700"
-                      style={{ width: `${matchScore}%` }}
-                    />
-                  </div>
+                    className={`h-full rounded-full transition-all duration-700 ${getScoreBarColor(result.matchScore)}`}
+                    style={{ width: `${result.matchScore}%` }}
+                  />
+                </div>
+
+                <div className="mt-2 flex justify-between text-xs text-text-secondary">
+                  <span>0% — Low match</span>
+                  <span>100% — Strong match</span>
                 </div>
               </div>
             </div>
-          )}
+          </section>
 
-          {/* Matching and missing skills cards */}
-          {(matchingSkills || missingSkills) && (
-            <div className="mb-6 grid gap-5 md:grid-cols-2">
-              {matchingSkills && (
-                <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 md:p-6">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-600">
-                      <CheckCircle2 size={22} />
-                    </div>
+          {/* Matching and missing skills */}
+          <div className="mb-6 grid gap-5 md:grid-cols-2">
+            <ResultList
+              title="Matching Skills"
+              items={result.matchingSkills}
+              emptyMessage="No specific matching skills were returned."
+              icon={CheckCircle2}
+              iconClassName="text-emerald-600"
+              iconBackground="bg-emerald-500/10"
+            />
 
-                    <h3 className="text-base font-semibold text-text-primary">
-                      Matching Skills
-                    </h3>
-                  </div>
+            <ResultList
+              title="Missing or Weak Skills"
+              items={result.missingSkills}
+              emptyMessage="No specific skill gaps were returned."
+              icon={XCircle}
+              iconClassName="text-amber-600"
+              iconBackground="bg-amber-500/10"
+            />
+          </div>
 
-                  <div className="text-sm leading-7 text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_p]:my-2 [&_strong]:font-semibold">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {matchingSkills}
-                    </ReactMarkdown>
-                  </div>
-                </section>
-              )}
+          {/* Strengths */}
+          <div className="mb-6">
+            <ResultList
+              title="Your Strengths"
+              items={result.strengths}
+              emptyMessage="No specific strengths were returned."
+              icon={CheckCircle2}
+              iconClassName="text-emerald-600"
+              iconBackground="bg-emerald-500/10"
+            />
+          </div>
 
-              {missingSkills && (
-                <section className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 md:p-6">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="rounded-xl bg-amber-500/10 p-2.5 text-amber-600">
-                      <AlertCircle size={22} />
-                    </div>
+          {/* Suggestions */}
+          <section className="rounded-2xl border border-primary/20 bg-primary/5 p-5 md:p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <Lightbulb size={22} />
+              </div>
 
-                    <h3 className="text-base font-semibold text-text-primary">
-                      Missing or Weak Skills
-                    </h3>
-                  </div>
+              <div>
+                <h3 className="text-base font-semibold text-text-primary">
+                  Suggestions to Improve
+                </h3>
 
-                  <div className="text-sm leading-7 text-text-primary [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:my-1 [&_p]:my-2 [&_strong]:font-semibold">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {missingSkills}
-                    </ReactMarkdown>
-                  </div>
-                </section>
-              )}
+                <p className="mt-1 text-sm text-text-secondary">
+                  Practical next steps based on your comparison.
+                </p>
+              </div>
             </div>
-          )}
 
-          {/* Complete AI report */}
-          <section className="rounded-2xl border border-border bg-surface p-5 md:p-7">
-            <h3 className="mb-5 text-lg font-bold text-text-primary">
-              Detailed Analysis
-            </h3>
+            {result.suggestions.length > 0 ? (
+              <ol className="space-y-3">
+                {result.suggestions.map((suggestion, index) => (
+                  <li
+                    key={`${suggestion}-${index}`}
+                    className="flex items-start gap-3 text-sm leading-6 text-text-primary"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                      {index + 1}
+                    </span>
 
-            <div className="text-sm leading-7 text-text-primary [&_h1]:mb-4 [&_h1]:mt-6 [&_h1]:text-xl [&_h1]:font-bold [&_h2]:mb-3 [&_h2]:mt-6 [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-5 [&_h3]:text-base [&_h3]:font-semibold [&_p]:my-3 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:space-y-1 [&_ul]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol]:space-y-1 [&_ol]:pl-6 [&_li]:pl-1 [&_strong]:font-semibold [&_hr]:my-6 [&_hr]:border-border [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-border [&_th]:bg-background [&_th]:p-2 [&_th]:text-left [&_td]:border [&_td]:border-border [&_td]:p-2">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {analysis}
-              </ReactMarkdown>
-            </div>
+                    <span className="pt-0.5">{suggestion}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-text-secondary">
+                No specific suggestions were returned.
+              </p>
+            )}
           </section>
         </section>
       )}

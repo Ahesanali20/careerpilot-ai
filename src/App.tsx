@@ -5,8 +5,10 @@ import Dashboard from "./components/dashboard/Dashboard";
 
 import ResumeAnalyzer from "./pages/ResumeAnalyzer";
 import JobMatcher from "./pages/JobMatcher";
+import CoverLetter from "./pages/CoverLetter";
 import SavedJobs from "./pages/SavedJobs";
 import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -19,8 +21,10 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/resume-analyzer" element={<ResumeAnalyzer />} />
             <Route path="/job-matcher" element={<JobMatcher />} />
+            <Route path="/cover-letter" element={<CoverLetter />} />
             <Route path="/saved-jobs" element={<SavedJobs />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>

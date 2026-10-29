@@ -4,6 +4,7 @@ import {
   Target,
   Bookmark,
   Settings,
+  Sparkles,
 } from "lucide-react";
 
 export const navigationItems = [
@@ -33,3 +34,9 @@ export const navigationItems = [
     icon: Settings,
   },
 ];
+
+navigationItems.push({
+  label: "AI Cover Letter",
+  path: "/cover-letter",
+  icon: Sparkles,
+});

@@ -1,11 +1,26 @@
 import type { Job } from "../../types/job";
-import { BriefcaseBusiness, Clock3, MapPin } from "lucide-react";
+import { BriefcaseBusiness, Bookmark, BookmarkCheck, Clock3, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { isJobSaved, SAVED_JOBS_UPDATED_EVENT, toggleSavedJob } from "../../utils/savedJobs";
 
 type JobMatchCardProps = {
   job: Job;
 };
 
 function JobMatchCard({ job }: JobMatchCardProps) {
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => setSaved(isJobSaved(job.id));
+    refresh();
+    window.addEventListener(SAVED_JOBS_UPDATED_EVENT, refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener(SAVED_JOBS_UPDATED_EVENT, refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [job.id]);
+
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg sm:p-6">
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-400 to-accent opacity-80" />
@@ -20,9 +35,14 @@ function JobMatchCard({ job }: JobMatchCardProps) {
             <p className="mt-1 truncate text-sm font-medium text-text-secondary">{job.company}</p>
           </div>
         </div>
-        <div className="shrink-0 rounded-xl bg-emerald-50 px-3 py-2 text-center ring-1 ring-emerald-100">
-          <p className="text-lg font-bold leading-none text-emerald-700">{job.matchScore}%</p>
-          <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80">Match</p>
+        <div className="flex shrink-0 items-start gap-2">
+          <button type="button" onClick={() => setSaved(toggleSavedJob(job))} aria-pressed={saved} aria-label={saved ? `Remove ${job.title} from saved jobs` : `Save ${job.title}`} className="rounded-xl p-2 text-slate-400 transition hover:bg-indigo-50 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            {saved ? <BookmarkCheck size={19} aria-hidden="true" /> : <Bookmark size={19} aria-hidden="true" />}
+          </button>
+          <div className="rounded-xl bg-emerald-50 px-3 py-2 text-center ring-1 ring-emerald-100">
+            <p className="text-lg font-bold leading-none text-emerald-700">{job.matchScore}%</p>
+            <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80">Match</p>
+          </div>
         </div>
       </div>
 

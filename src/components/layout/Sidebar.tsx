@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Menu, X, Sparkles } from "lucide-react";
+import { BriefcaseBusiness, Menu, Sparkles, X } from "lucide-react";
 import { navigationItems } from "../../data/navigation";
 import { useEffect, useState } from "react";
 
@@ -22,8 +22,9 @@ function Sidebar() {
       {/* Mobile Top Header */}
       <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/10 bg-sidebar/95 px-4 text-white shadow-lg backdrop-blur-md md:hidden">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-primary-hover font-bold shadow-md shadow-primary/20 ring-1 ring-white/20">
-            C
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary-hover to-accent shadow-md shadow-primary/25 ring-1 ring-white/25">
+            <BriefcaseBusiness size={18} strokeWidth={2.4} className="text-white" />
+            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-sidebar" />
           </div>
           <div>
             <p className="text-sm font-semibold tracking-tight text-white">
@@ -66,8 +67,9 @@ function Sidebar() {
         <div>
           {/* Brand (Desktop View) */}
           <div className="mb-8 hidden items-center gap-3 px-2 md:flex">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-primary-hover shadow-lg shadow-primary/25 ring-1 ring-white/20">
-              <span className="text-lg font-bold text-white">C</span>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary-hover to-accent shadow-lg shadow-primary/25 ring-1 ring-white/25">
+              <BriefcaseBusiness size={20} strokeWidth={2.4} className="text-white" />
+              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent ring-2 ring-sidebar" />
             </div>
 
             <div>
