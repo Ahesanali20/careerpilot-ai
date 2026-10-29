@@ -9,6 +9,10 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { fetchJson } from "../utils/api";
+import AnimatedCard from "../components/animations/AnimatedCard";
+import AnimatedPage from "../components/animations/AnimatedPage";
+import FloatingIcon from "../components/animations/FloatingIcon";
+import LoadingDots from "../components/animations/LoadingDots";
 
 export default function CoverLetter() {
   const [resumeText, setResumeText] = useState("");
@@ -23,20 +27,37 @@ export default function CoverLetter() {
     setError("");
     setCoverLetter("");
 
-    if (!resumeText.trim() || !jobDescription.trim() || !companyName.trim() || !jobTitle.trim()) {
-      setError("Please enter your resume, job description, company name, and job title.");
+    if (
+      !resumeText.trim() ||
+      !jobDescription.trim() ||
+      !companyName.trim() ||
+      !jobTitle.trim()
+    ) {
+      setError(
+        "Please enter your resume, job description, company name, and job title.",
+      );
       return;
     }
 
-    if (resumeText.length > 30000 || jobDescription.length > 20000 || companyName.length > 100 || jobTitle.length > 100) {
-      setError("Please keep your resume under 30,000 characters, the job description under 20,000, and names under 100.");
+    if (
+      resumeText.length > 30000 ||
+      jobDescription.length > 20000 ||
+      companyName.length > 100 ||
+      jobTitle.length > 100
+    ) {
+      setError(
+        "Please keep your resume under 30,000 characters, the job description under 20,000, and names under 100.",
+      );
       return;
     }
 
     setIsGenerating(true);
 
     try {
-      const { response, data } = await fetchJson<{ coverLetter?: unknown; error?: string }>("/api/generate-cover-letter", {
+      const { response, data } = await fetchJson<{
+        coverLetter?: unknown;
+        error?: string;
+      }>("/api/generate-cover-letter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +115,7 @@ export default function CoverLetter() {
   const labelClass = "mb-2 block text-sm font-medium text-slate-700";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 pb-10">
+    <AnimatedPage className="mx-auto max-w-6xl space-y-8 px-5 pb-10 sm:px-8 lg:px-10">
       <header>
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
           <FileText size={25} />
@@ -111,7 +132,7 @@ export default function CoverLetter() {
       </header>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <AnimatedCard className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-6" delay={2}>
           <div>
             <h2 className="text-lg font-semibold text-slate-900">
               Your Information
@@ -204,11 +225,29 @@ export default function CoverLetter() {
               onClick={handleGenerate}
               disabled={isGenerating}
               aria-busy={isGenerating}
-              aria-label={isGenerating ? "Generating cover letter" : "Generate cover letter"}
+              aria-label={
+                isGenerating
+                  ? "Generating cover letter"
+                  : "Generate cover letter"
+              }
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 font-medium text-white transition hover:bg-violet-700"
             >
-              {isGenerating ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" /> : <Sparkles size={18} aria-hidden="true" />}
-              {isGenerating ? "Generating..." : "Generate Cover Letter"}
+              {isGenerating ? (
+                <LoaderCircle
+                  size={18}
+                  className="animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Sparkles size={18} aria-hidden="true" />
+              )}
+              {isGenerating ? (
+                <>
+                  Generating <LoadingDots />
+                </>
+              ) : (
+                "Generate Cover Letter"
+              )}
             </button>
 
             <button
@@ -220,9 +259,9 @@ export default function CoverLetter() {
               Reset
             </button>
           </div>
-        </section>
+        </AnimatedCard>
 
-        <section className="flex min-h-[400px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <AnimatedCard className="flex min-h-[400px] flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-300 hover:shadow-md sm:p-6" delay={3}>
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-slate-900">
@@ -251,9 +290,11 @@ export default function CoverLetter() {
               </p>
             ) : (
               <>
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
-                  <FileText size={28} />
-                </div>
+                <FloatingIcon className="mb-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
+                    <FileText size={28} />
+                  </div>
+                </FloatingIcon>
                 <h3 className="font-semibold text-slate-800">
                   Your cover letter starts here
                 </h3>
@@ -264,8 +305,8 @@ export default function CoverLetter() {
               </>
             )}
           </div>
-        </section>
+        </AnimatedCard>
       </div>
-    </div>
+    </AnimatedPage>
   );
 }

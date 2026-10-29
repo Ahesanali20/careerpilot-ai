@@ -10,6 +10,8 @@ import {
   UserRound,
 } from "lucide-react";
 import { loadSettings, saveSettings, type SettingsState } from "../utils/settings";
+import AnimatedPage from "../components/animations/AnimatedPage";
+import AnimatedCard from "../components/animations/AnimatedCard";
 
 function Settings() {
   const [settings, setSettings] = useState<SettingsState>(loadSettings);
@@ -39,7 +41,7 @@ function Settings() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl p-6 md:p-8">
+    <AnimatedPage className="mx-auto w-full max-w-5xl p-6 md:p-8">
       <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="mb-2 text-sm font-medium text-primary">PREFERENCES</p>
@@ -56,7 +58,7 @@ function Settings() {
       {saveError && <p role="alert" className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{saveError}</p>}
 
       <div className="space-y-6">
-        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <AnimatedCard className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6" delay={2}>
           <div className="mb-6 flex items-start gap-3"><div className="rounded-xl bg-indigo-50 p-2.5 text-primary"><UserRound size={20} aria-hidden="true" /></div><div><h2 className="font-semibold text-text-primary">Profile</h2><p className="mt-1 text-sm text-text-secondary">Keep your career profile ready for personalized recommendations.</p></div></div>
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="text-sm font-medium text-text-primary">Full name<input value={settings.fullName} onChange={(event) => update("fullName", event.target.value)} placeholder="Your name" className="mt-2 w-full rounded-xl border border-border bg-white px-3.5 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" /></label>
@@ -65,18 +67,18 @@ function Settings() {
             <label className="text-sm font-medium text-text-primary">Preferred location<div className="relative"><MapPin size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" /><input value={settings.preferredLocation} onChange={(event) => update("preferredLocation", event.target.value)} placeholder="Remote, Bengaluru, etc." className="mt-2 w-full rounded-xl border border-border bg-white py-3 pl-9 pr-3.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" /></div></label>
           </div>
           <label className="mt-5 block text-sm font-medium text-text-primary">Job search status<select value={settings.searchStatus} onChange={(event) => update("searchStatus", event.target.value as SettingsState["searchStatus"])} className="mt-2 w-full rounded-xl border border-border bg-white px-3.5 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:max-w-md"><option value="actively-looking">Actively looking</option><option value="open-to-opportunities">Open to opportunities</option><option value="not-looking">Not looking right now</option></select></label>
-        </section>
+        </AnimatedCard>
 
-        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6">
+        <AnimatedCard className="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-6" delay={3}>
           <div className="mb-6 flex items-start gap-3"><div className="rounded-xl bg-amber-50 p-2.5 text-amber-600"><Bell size={20} aria-hidden="true" /></div><div><h2 className="font-semibold text-text-primary">Notifications</h2><p className="mt-1 text-sm text-text-secondary">Choose which updates CareerPilot should send you.</p></div></div>
           <div className="divide-y divide-border">
             <Toggle label="Job match alerts" description="Get notified when new opportunities match your profile." checked={settings.emailAlerts} onChange={(value) => update("emailAlerts", value)} />
             <Toggle label="Weekly career digest" description="Receive a weekly summary of your activity and saved jobs." checked={settings.weeklyDigest} onChange={(value) => update("weeklyDigest", value)} />
             <Toggle label="Save strong matches automatically" description="Automatically add high-scoring matches to Saved Jobs." checked={settings.saveMatchesAutomatically} onChange={(value) => update("saveMatchesAutomatically", value)} />
           </div>
-        </section>
+        </AnimatedCard>
       </div>
-    </main>
+    </AnimatedPage>
   );
 }
 

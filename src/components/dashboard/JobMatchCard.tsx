@@ -2,6 +2,7 @@ import type { Job } from "../../types/job";
 import { BriefcaseBusiness, Bookmark, BookmarkCheck, Clock3, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 import { isJobSaved, SAVED_JOBS_UPDATED_EVENT, toggleSavedJob } from "../../utils/savedJobs";
+import { motion } from "framer-motion";
 
 type JobMatchCardProps = {
   job: Job;
@@ -22,7 +23,13 @@ function JobMatchCard({ job }: JobMatchCardProps) {
   }, [job.id]);
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg sm:p-6">
+    <motion.article
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.4 }}
+      className="group relative overflow-hidden rounded-2xl border border-border bg-surface p-5 shadow-sm transition duration-200 hover:border-indigo-200 hover:shadow-lg sm:p-6"
+    >
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-400 to-accent opacity-80" />
 
       <div className="flex items-start justify-between gap-4">
@@ -70,7 +77,7 @@ function JobMatchCard({ job }: JobMatchCardProps) {
           <p className="mt-1 text-base font-bold text-text-primary">{job.salary}</p>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 }
 

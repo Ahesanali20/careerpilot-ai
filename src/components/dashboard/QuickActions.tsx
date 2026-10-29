@@ -1,5 +1,8 @@
 import { FileSearch, Target, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+
+const MotionLink = motion(Link);
 
 const actions = [
   {
@@ -35,7 +38,7 @@ function QuickActions() {
           const Icon = action.icon;
 
           return (
-            <Link
+            <MotionLink
               key={action.path}
               to={action.path}
               className="group flex items-center gap-4 rounded-2xl border border-border bg-surface p-5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
@@ -57,7 +60,7 @@ function QuickActions() {
                 size={18}
                 className="shrink-0 text-text-secondary transition-transform group-hover:translate-x-1 group-hover:text-primary"
               />
-            </Link>
+            </MotionLink>
           );
         })}
       </div>

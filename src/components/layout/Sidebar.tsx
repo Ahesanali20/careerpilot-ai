@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 import { BriefcaseBusiness, Menu, Sparkles, X } from "lucide-react";
 import { navigationItems } from "../../data/navigation";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,9 +58,12 @@ function Sidebar() {
       )}
 
       {/* Main Sidebar */}
-      <aside
+      <motion.aside
         id="mobile-navigation"
         aria-label="Main navigation"
+        initial={{ x: -40, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
         className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[min(19rem,85vw)] flex-col justify-between overflow-y-auto border-r border-white/10 bg-sidebar px-4 py-6 text-white shadow-2xl transition-transform duration-300 ease-out md:sticky md:top-0 md:z-auto md:w-64 md:translate-x-0 md:pt-6 md:shadow-none ${
           isOpen ? "translate-x-0 pt-20" : "-translate-x-full"
         }`}
@@ -122,7 +126,7 @@ function Sidebar() {
             Find opportunities that match your skills.
           </p>
         </div>
-      </aside>
+      </motion.aside>
     </>
   );
 }

@@ -4,10 +4,11 @@ import DashboardHeader from "../layout/DashboardHeader";
 import QuickActions from "./QuickActions";
 import JobMatchCard from "./JobMatchCard";
 import { recentJobs } from "../../data/recentJobs";
+import AnimatedPage from "../animations/AnimatedPage";
 
 function Dashboard() {
   return (
-    <div className="min-w-0 flex-1">
+    <AnimatedPage className="min-w-0 flex-1">
       <DashboardHeader />
 
       <main className="p-6 md:p-8">
@@ -55,7 +56,7 @@ function Dashboard() {
           </div>
         </section>
       </main>
-    </div>
+    </AnimatedPage>
   );
 }
 

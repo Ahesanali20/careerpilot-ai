@@ -15,6 +15,8 @@ import {
   Lightbulb,
   XCircle,
 } from "lucide-react";
+import AnimatedPage from "../components/animations/AnimatedPage";
+import AnimatedCard from "../components/animations/AnimatedCard";
 
 type MatchCategory =
   | "Strong Match"
@@ -249,7 +251,7 @@ function JobMatcher() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-7xl p-5 md:p-8">
+    <AnimatedPage className="mx-auto w-full max-w-7xl p-5 md:p-8">
       {/* Page heading */}
       <div className="mb-8">
         <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
@@ -278,7 +280,7 @@ function JobMatcher() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+        <AnimatedCard className="rounded-2xl border border-border bg-surface p-5 md:p-6" delay={2}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <label
               htmlFor="resumeText"
@@ -316,9 +318,9 @@ function JobMatcher() {
               Add more resume details to continue.
             </p>
           )}
-        </section>
+        </AnimatedCard>
 
-        <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+        <AnimatedCard className="rounded-2xl border border-border bg-surface p-5 md:p-6" delay={3}>
           <div className="mb-4 flex items-center justify-between gap-3">
             <label
               htmlFor="jobDescription"
@@ -356,7 +358,7 @@ function JobMatcher() {
               Add more job details to continue.
             </p>
           )}
-        </section>
+        </AnimatedCard>
       </div>
 
       {/* Compare button */}
@@ -439,7 +441,7 @@ function JobMatcher() {
           </div>
 
           {/* Match score card */}
-          <section className="mb-6 rounded-2xl border border-border bg-surface p-5 md:p-7">
+          <AnimatedCard className="mb-6 rounded-2xl border border-border bg-surface p-5 md:p-7" delay={2}>
             <div className="grid gap-6 md:grid-cols-[auto_1fr] md:items-center">
               <div className="flex flex-col items-center justify-center rounded-2xl bg-background p-6 md:min-w-44">
                 <p className="text-sm font-medium text-text-secondary">
@@ -492,7 +494,7 @@ function JobMatcher() {
                 </div>
               </div>
             </div>
-          </section>
+          </AnimatedCard>
 
           {/* Matching and missing skills */}
           <div className="mb-6 grid gap-5 md:grid-cols-2">
@@ -528,7 +530,7 @@ function JobMatcher() {
           </div>
 
           {/* Suggestions */}
-          <section className="rounded-2xl border border-primary/20 bg-primary/5 p-5 md:p-6">
+          <AnimatedCard className="rounded-2xl border border-primary/20 bg-primary/5 p-5 md:p-6" delay={3}>
             <div className="mb-4 flex items-center gap-3">
               <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                 <Lightbulb size={22} />
@@ -565,10 +567,10 @@ function JobMatcher() {
                 No specific suggestions were returned.
               </p>
             )}
-          </section>
+          </AnimatedCard>
         </section>
       )}
-    </main>
+    </AnimatedPage>
   );
 }
 

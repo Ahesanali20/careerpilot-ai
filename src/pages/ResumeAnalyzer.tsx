@@ -12,6 +12,8 @@ import { fetchJson } from "../utils/api";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import AnimatedPage from "../components/animations/AnimatedPage";
+import AnimatedCard from "../components/animations/AnimatedCard";
 
 const analysisMarkdownComponents: Components = {
   h1: ({ children }) => (
@@ -137,7 +139,7 @@ function ResumeAnalyzer() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-4xl p-5 sm:p-8 lg:p-10">
+    <AnimatedPage className="mx-auto w-full max-w-4xl p-5 sm:p-8 lg:p-10">
       {/* Header Section */}
       <div className="mb-8 flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 shadow-sm">
@@ -161,7 +163,7 @@ function ResumeAnalyzer() {
       </div>
 
       {/* Upload Zone */}
-      <div className="mt-6">
+      <AnimatedCard className="mt-6 border-0 bg-transparent p-0 shadow-none" delay={2}>
         <label
           htmlFor="resume-upload"
           onClick={(event) => {
@@ -227,7 +229,7 @@ function ResumeAnalyzer() {
           className="sr-only"
           disabled={isAnalyzing}
         />
-      </div>
+      </AnimatedCard>
 
       {/* Error Message */}
       {error && (
@@ -242,7 +244,7 @@ function ResumeAnalyzer() {
 
       {/* Selected File Card */}
       {selectedFile && (
-        <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-surface p-4 shadow-sm">
+        <AnimatedCard className="mt-5 flex items-center justify-between rounded-xl border border-border bg-surface p-4 shadow-sm" delay={3}>
           <div className="flex items-center gap-3.5 overflow-hidden">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-primary">
               <FileText className="h-5 w-5" />
@@ -280,7 +282,7 @@ function ResumeAnalyzer() {
           >
             <Trash2 className="h-4 w-4" />
           </button>
-        </div>
+        </AnimatedCard>
       )}
 
       {/* Action Button */}
@@ -361,7 +363,7 @@ function ResumeAnalyzer() {
 
       {/* Extracted Text Section */}
       {extractedText && (
-        <section className="mt-8 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6">
+        <AnimatedCard className="mt-8 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6" delay={4}>
           <div className="border-b border-border pb-4">
             <h2 className="text-lg font-semibold text-text-primary">
               Extracted Resume Text
@@ -379,11 +381,11 @@ function ResumeAnalyzer() {
             aria-label="Extracted resume text"
             className="mt-4 block max-h-[70vh] min-h-[20rem] w-full max-w-full resize-y overflow-x-hidden overflow-y-auto whitespace-pre-wrap break-words rounded-xl border border-border bg-background p-4 font-sans text-sm leading-7 tracking-[0.01em] text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5"
             />
-        </section>
+        </AnimatedCard>
       )}
 
       {analysis && (
-        <section className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <AnimatedCard className="mt-8 rounded-2xl border border-border bg-surface p-6 shadow-sm" delay={4}>
           <div className="border-b border-border pb-4">
             <h2 className="text-lg font-semibold text-text-primary">
               AI Resume Analysis
@@ -401,9 +403,9 @@ function ResumeAnalyzer() {
               {analysis}
             </ReactMarkdown>
           </div>
-        </section>
+        </AnimatedCard>
       )}
-    </main>
+    </AnimatedPage>
   );
 }
 
