@@ -9,7 +9,10 @@ function DashboardHeader() {
     window.addEventListener("careerpilot:settings-updated", refreshProfile);
     window.addEventListener("storage", refreshProfile);
     return () => {
-      window.removeEventListener("careerpilot:settings-updated", refreshProfile);
+      window.removeEventListener(
+        "careerpilot:settings-updated",
+        refreshProfile,
+      );
       window.removeEventListener("storage", refreshProfile);
     };
   }, []);
@@ -43,8 +46,12 @@ function DashboardHeader() {
         </div>
 
         <div className="hidden sm:block">
-          <p className="text-sm font-semibold text-text-primary">{displayName}</p>
-          <p className="text-xs text-text-secondary">{profile.targetRole || "Job Seeker"}</p>
+          <p className="text-sm font-semibold text-text-primary">
+            {displayName}
+          </p>
+          <p className="text-xs text-text-secondary">
+            {profile.targetRole || "Job Seeker"}
+          </p>
         </div>
       </div>
     </header>
